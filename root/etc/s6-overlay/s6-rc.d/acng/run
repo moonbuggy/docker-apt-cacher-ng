@@ -1,0 +1,5 @@
+#! /usr/bin/execlineb -P
+
+with-contenv
+
+/usr/sbin/apt-cacher-ng -v -c /etc/apt-cacher-ng foreground=1

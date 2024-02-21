@@ -1,0 +1,23 @@
+#! /usr/bin/execlineb -P
+
+with-contenv
+
+background {
+  importas ACNG_FOLLOW_ERROR ACNG_FOLLOW_ERROR
+  case -i "${ACNG_FOLLOW_ERROR}" {
+    true|1 {
+      background { echo "acng-log: info: following apt-cacher.err" }
+      foreground { touch /var/log/apt-cacher-ng/apt-cacher.err }
+      tail -c 0 -f /var/log/apt-cacher-ng/apt-cacher.err
+    }
+  } true # no-op
+}
+
+importas ACNG_FOLLOW_LOG ACNG_FOLLOW_LOG
+case -i "${ACNG_FOLLOW_LOG}" {
+  true|1 {
+    background { echo "acng-log: info: following apt-cacher.log" }
+    foreground { touch /var/log/apt-cacher-ng/apt-cacher.log }
+    tail -c 0 -f /var/log/apt-cacher-ng/apt-cacher.log
+  }
+} true # no-op

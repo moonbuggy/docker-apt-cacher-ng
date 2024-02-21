@@ -1,0 +1,123 @@
+with-contenv
+
+importas -D "/etc/apt-cacher-ng" CONF_PATH CONF_PATH
+importas -D "/usr/lib/apt-cacher-ng" LISTS_PATH LISTS_PATH
+importas -D "/scripts" SCRIPTS_PATH SCRIPTS_PATH
+
+## set HTTPS passthrough
+#
+foreground {
+	importas ACNG_SSL_PASSTHROUGH ACNG_SSL_PASSTHROUGH
+	case -i "${ACNG_SSL_PASSTHROUGH}" {
+		true|1 {
+			background { echo "acng-init: info: set HTTPS passthrough" }
+			redirfd -a 1 ${CONF_PATH}/acng.conf
+			echo PassThroughPattern: ^(.*):443$
+		}
+	} true # no-op
+}
+
+## run an update
+#
+foreground { echo "acng-init: info: running update" }
+foreground { ${SCRIPTS_PATH}/update.sh }
+
+## set country
+#
+# if COUNTRY is set in the environment use it, otherwise try and
+# determine the country from the TZ environment variable
+#
+importas -D "Etc/UTC" TZ TZ
+
+backtick COUNTRY {
+	importas COUNTRY COUNTRY
+	ifelse -X { test ! -z "${COUNTRY}" }
+		{ echo "${COUNTRY}" }
+	if -Xt { ${SCRIPTS_PATH}/get_country_code.sh ${TZ} }
+		true # no-op
+}
+importas COUNTRY COUNTRY
+
+foreground {
+	ifelse -X { test -z "${COUNTRY}" } {
+		echo "acng-init: warning: unable to get country from TZ (${TZ})"
+	}
+	echo "acng-init: info: set country: ${COUNTRY}"
+}
+
+## repo configurations
+#
+importas -D "${COUNTRY}" ALPINE_COUNTRY ALPINE_COUNTRY
+importas -D "${COUNTRY}" ARMBIAN_COUNTRY ARMBIAN_COUNTRY
+importas -D "${COUNTRY}" DEBIAN_COUNTRY DEBIAN_COUNTRY
+
+# alpine
+foreground {
+	define remap_string "file:mirrors_alpine /alpine /alpinelinux"
+	backtick repo_string {
+    ifelse -X { test -f "${LISTS_PATH}/backends_alpine.${ALPINE_COUNTRY}" } {
+      echo "${remap_string}; file:backends_alpine.${ALPINE_COUNTRY}"
+    }
+    echo "${remap_string}"
+  }
+  importas repo_string repo_string
+
+	background { echo "acng-init: info: Remap: ${repo_string}" }
+  redirfd -a 1 ${CONF_PATH}/acng.conf
+  echo Remap-alprep: ${repo_string}
+}
+
+# armbian packages
+foreground {
+	redirfd -a 1 ${CONF_PATH}/acng.conf
+	echo "Remap-armbrep: http://apt.armbian.com/"
+}
+
+foreground {
+	define remap_string "file:mirrors_armbian /armbian /apt /armbian/apt"
+	backtick repo_string {
+    ifelse -X { test -f "${LISTS_PATH}/backends_armbian.${ARMBIAN_COUNTRY}" } {
+      echo "${remap_string}; file:backends_armbian.${ARMBIAN_COUNTRY}"
+    }
+    echo "${remap_string}"
+  }
+  importas repo_string repo_string
+
+	background { echo "acng-init: info: Remap: ${repo_string}" }
+	redirfd -a 1 ${CONF_PATH}/acng.conf
+	echo Remap-armbrep: ${repo_string}
+}
+
+# armbian archives
+foreground {
+	define remap_string "file:mirrors_armbian_archive /archive"
+	backtick repo_string_arch {
+    ifelse -X { test -f "${LISTS_PATH}/backends_armbian_archive.${ARMBIAN_COUNTRY}" } {
+      echo "${remap_string}; file:backends_armbian_archive.${ARMBIAN_COUNTRY}"
+    }
+    echo "${remap_string}"
+  }
+  importas repo_string_arch repo_string_arch
+
+	background { echo "acng-init: info: Remap: ${repo_string_arch}" }
+  redirfd -a 1 ${CONF_PATH}/acng.conf
+  echo Remap-armbarchrep: ${repo_string_arch}
+}
+
+# debian
+foreground {
+	define remap_string "file:mirrors_debian /debian"
+  backtick repo_string {
+    ifelse -X { test -f "${LISTS_PATH}/backends_debian.${DEBIAN_COUNTRY}" } {
+      echo "${remap_string}; file:backends_debian.${DEBIAN_COUNTRY}"
+    }
+    echo "${remap_string}"
+  }
+
+  importas repo_string repo_string
+	background { echo "acng-init: info: Remap: ${repo_string}" }
+  sed -E -i "${CONF_PATH}/acng.conf" -e "s|^#?\\s*(Remap-debrep:).*|\\1 ${repo_string}|g"
+#	redirfd -a 1 ${CONF_PATH}/acng.conf
+#	echo Remap-debrep: ${repo_string_arch}
+}
+true # no-op

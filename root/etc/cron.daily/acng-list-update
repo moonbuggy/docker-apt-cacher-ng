@@ -1,0 +1,3 @@
+#! /command/with-contenv /bin/sh
+
+${SCRIPTS_PATH}/update.sh
