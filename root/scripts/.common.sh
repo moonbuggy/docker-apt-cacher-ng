@@ -91,7 +91,7 @@ update_list() {
   list_modified="$(stat ${list_file} | grep -oP '(?<=Modify:\s).*(?=\.)')"
   list_age=$((($(date +%s) - $(date -d "${list_modified}" +%s)) / 86400))
 
-  printf "%s: %d day(s) old, expiry: ${list_expiry}.. " "${list_file}" "${list_age}"
+  printf "%s: %d day(s) old, expiry: %s.. " "${list_file}" "${list_age}" "${list_expiry}"
 
   if [ ${list_expiry} -gt ${list_age} ]; then
     echo 'skipping download'

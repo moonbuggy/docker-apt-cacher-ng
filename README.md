@@ -67,11 +67,12 @@ for, but it shouldn't be hard to use these existing scripts as a template to add
 more distributions as desired.
 
 It's also necessary to add any new scripts to _/etc/s6-overlay/s6-rc.d/acng-init/up_,
-which makes the necessary additions/modifications to _acng.conf_ at boot.
+which makes the necessary additions/modifications to _acng.conf_ at startup.
 
-Alternatively, _acng.conf_ itself could per persisted and any changes made
-directly (but be aware changes in _acng.conf_ may be overwritten by _acng-init_
-if it's a change to a distribution the init is already handling).
+The container overwrites _/etc/apt-cacher-ng/acng.conf_ with
+_/etc/apt-cacher-ng/acng-initial.conf_ during init, so to make manual changes
+directly to _acng.conf_ the _acng-initial.conf_ file should be persisted and any
+modifications made there.
 
 ## Countries
 The `<distro>_COUNTRY` environment variables are optional, allowing an override

@@ -4,6 +4,13 @@ importas -D "/etc/apt-cacher-ng" CONF_PATH CONF_PATH
 importas -D "/usr/lib/apt-cacher-ng" LISTS_PATH LISTS_PATH
 importas -D "/scripts" SCRIPTS_PATH SCRIPTS_PATH
 
+## copy initial config file to working file
+foreground {
+	background { echo "acng-init: info: creating config" }
+	redirfd -w 1 ${CONF_PATH}/acng.conf
+	cat ${CONF_PATH}/acng-initial.conf
+}
+
 ## set HTTPS passthrough
 #
 foreground {
@@ -15,6 +22,19 @@ foreground {
 			echo PassThroughPattern: ^(.*):443$
 		}
 	} true # no-op
+}
+
+## set file patterns
+foreground {
+	importas ACNG_PFILEPATTERNEX ACNG_PFILEPATTERNEX
+	importas ACNG_VFILEPATTERNEX ACNG_VFILEPATTERNEX
+	background { echo "acng-init: info: set file patterns" }
+	foreground {
+		redirfd -a 1 ${CONF_PATH}/acng.conf
+		echo PfilePatternEx: ${ACNG_PFILEPATTERNEX}
+	}
+	redirfd -a 1 ${CONF_PATH}/acng.conf
+	echo VfilePatternEx: ${ACNG_VFILEPATTERNEX}
 }
 
 ## run an update

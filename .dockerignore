@@ -7,3 +7,4 @@ hooks
 arch*.yaml
 build.sh
 build.conf
+mirrors

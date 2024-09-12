@@ -4,3 +4,4 @@ _dummyfile
 .qemu_static
 .include
 __pycache__
+mirrors
